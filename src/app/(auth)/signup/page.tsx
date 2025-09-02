@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { AuthForm } from "@/components/auth-form";
+import { SignupForm } from "@/components/signup-form";
 
 export default function SignupPage() {
   return (
@@ -9,7 +9,7 @@ export default function SignupPage() {
           <h2 className="text-xl font-bold">Sign Up</h2>
         </CardHeader>
         <CardContent>
-          <AuthForm mode="signup" />
+          <SignupForm />
         </CardContent>
       </Card>
     </div>

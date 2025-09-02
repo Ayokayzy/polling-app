@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { AuthForm } from "@/components/auth-form";
+import { LoginForm } from "@/components/login-form";
 import { createClient } from "@/lib/superbase/server";
 import { redirect } from "next/navigation";
 
@@ -21,7 +21,7 @@ export default async function LoginPage() {
           <h2 className="text-xl font-bold">Login</h2>
         </CardHeader>
         <CardContent>
-          <AuthForm mode="login" />
+          <LoginForm />
         </CardContent>
       </Card>
     </div>

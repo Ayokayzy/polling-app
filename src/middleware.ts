@@ -1,73 +1,44 @@
-import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-
-async function updateSession(request: NextRequest) {
-    let response = NextResponse.next({
-        request: {
-            headers: request.headers,
-        },
-    });
-
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value;
-                },
-                set(name: string, value: string, options) {
-                    request.cookies.set({ name, value, ...options });
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    });
-                    response.cookies.set({ name, value, ...options });
-                },
-                remove(name: string, options) {
-                    request.cookies.set({ name, value: "", ...options });
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    });
-                    response.cookies.set({ name, value: "", ...options });
-                },
-            },
-        }
-    );
-
-    return { supabase, response };
-}
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-    const { supabase, response } = await updateSession(request);
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-    const {
-        data: { session },
-    } = await supabase.auth.getSession();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    },
+  );
 
-    const { pathname } = request.nextUrl;
+  const { data } = await supabase.auth.getUser();
 
-    const publicPaths = ["/login", "/signup"]; // make sure it's "/signup" not "/register"
-    const isPublic = publicPaths.includes(pathname);
+  if (data.user && request.nextUrl.pathname.startsWith("/auth")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 
-    // Redirect unauthenticated users
-    if (!session && !isPublic) {
-        const loginUrl = new URL("/login", request.url);
-        loginUrl.searchParams.set("redirectedFrom", pathname);
-        return NextResponse.redirect(loginUrl);
-    }
+  if (!data.user && !request.nextUrl.pathname.startsWith("/auth")) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
-    // Redirect logged-in users away from login/signup
-    if (session && ["/login", "/signup"].includes(pathname)) {
-        return NextResponse.redirect(new URL("/polls", request.url));
-    }
-
-    return response;
+  return response;
 }
 
 export const config = {
-    matcher: ["/polls/:path*"], // ✅ middleware only runs for protected routes
+  matcher: ["/polls/:path*"], // ✅ middleware only runs for protected routes
 };

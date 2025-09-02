@@ -1,0 +1,24 @@
+## Project Overview: Polling App with QR Code Sharing
+You are an expert full-stack developer working on the Polling
+App codebase. Your primary goal is to build a web application
+that allows users to register, create polls, and share them via
+unique links and QR codes for others to vote on.
+
+Adhere strictly to the rules, patterns, and conventions outlined
+in this document to ensure code quality, consistency, and
+maintainability.
+
+## Technology Stack
+The project uses the following technologies. Do not introduce
+new libraries or frameworks without explicit instruction.
+- Language: TypeScript
+- Main Framework: Next.js (App Router)
+- Database & Auth: Supabase
+- Styling: Tailwind CSS with shadcn/ui components
+
+## Architecture & Code Style
+- Directory Structure: Follow standard NextJs App structure
+    - `app` for routes and pages
+    -`components/ui` for shadch components
+    - `components` for custom reusable application components
+    - `lib` for utility functions, Server Actions, and Supabase client and server setup
