@@ -1,80 +1,59 @@
 "use client";
 
+import { useFormState, useFormStatus } from "react-dom";
+import { login } from "@/lib/actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "./ui/form";
-import { login } from "@/lib/actions";
+import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
-import { useFormStatus } from "react-dom";
 
-const formSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters long",
-  }),
-});
+const initialState = {
+  message: "",
+  validate: true,
+  errors: {} as Record<string, string>,
+};
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" disabled={pending}>
+      {pending ? "Logging in..." : "Login"}
+    </Button>
+  );
+}
 
 export function LoginForm() {
+  const [state, formAction] = useActionState(login, initialState);
   const { pending } = useFormStatus();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
+  console.log({ pending });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    const result = await login({}, values); // call server action manually
-    if (!result.validate) {
-      toast.error(result.message);
+  // Show toast for general error messages
+  useEffect(() => {
+    console.log({ state });
+    if (!state.validate && state.message) {
+      toast.error(state.message);
     }
-  };
+  }, [state]);
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-4"
-      >
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit">{pending ? "Loading..." : "Login"}</Button>
-      </form>
-    </Form>
+    <form action={formAction} className="flex flex-col gap-4">
+      <div>
+        <label className="block text-sm font-medium">Email</label>
+        <Input type="email" name="email" placeholder="you@example.com" />
+        {state.errors?.email && (
+          <p className="text-sm text-red-500">{state.errors.email}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">Password</label>
+        <Input type="password" name="password" placeholder="••••••••" />
+        {state.errors?.password && (
+          <p className="text-sm text-red-500">{state.errors.password}</p>
+        )}
+      </div>
+
+      <SubmitButton />
+    </form>
   );
 }

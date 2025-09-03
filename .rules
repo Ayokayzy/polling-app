@@ -13,7 +13,7 @@ The project uses the following technologies. Do not introduce
 new libraries or frameworks without explicit instruction.
 - Language: TypeScript
 - Main Framework: Next.js (App Router)
-- Database & Auth: Supabase
+- Database & Auth: Supabase and prisma ORM
 - Styling: Tailwind CSS with shadcn/ui components
 
 ## Architecture & Code Style
