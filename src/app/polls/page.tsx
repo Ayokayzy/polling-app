@@ -1,12 +1,9 @@
 import { PollCard } from "@/components/poll-card";
 import { createClient } from "@/lib/superbase/server";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
 
 export default async function PollsPage() {
-  const polls = [
-    { id: 1, question: "Best programming language?", votes: 120 },
-    { id: 2, question: "Frontend vs Backend?", votes: 80 },
-  ];
   const supabase = await createClient();
 
   const {
@@ -19,13 +16,17 @@ export default async function PollsPage() {
     redirect("/login");
   }
 
-  console.log({ user });
+  const polls = await prisma.poll.findMany({
+    include: {
+      creator: true,
+    },
+  });
 
   return (
     <div className="p-6 grid gap-4">
       <h1 className="text-2xl font-bold mb-4">All Polls</h1>
       {polls.map((poll) => (
-        <PollCard key={poll.id} poll={poll} />
+        <PollCard key={poll.id} poll={poll} user={user} />
       ))}
     </div>
   );

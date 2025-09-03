@@ -164,3 +164,84 @@ export async function createPoll(
     };
   }
 }
+
+export async function updatePoll(
+  id: string,
+  prevState: any,
+  formData: FormData,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      message: "You must be logged in to update a poll.",
+      validate: false,
+    };
+  }
+
+  const schema = z.object({
+    question: z.string().min(1),
+    options: z.array(z.string()).min(2),
+  });
+
+  const data = schema.parse({
+    question: formData.get("question"),
+    options: Array.from(formData.getAll("options")),
+  });
+
+  try {
+    await prisma.poll.update({
+      where: {
+        id,
+        creatorId: user.id,
+      },
+      data: {
+        question: data.question,
+        options: data.options,
+      },
+    });
+
+    redirect("/polls");
+  } catch (error) {
+    return {
+      message: "Failed to update poll.",
+      validate: false,
+    };
+  }
+}
+
+export async function deletePoll(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      message: "You must be logged in to delete a poll.",
+      success: false,
+    };
+  }
+
+  try {
+    await prisma.poll.delete({
+      where: {
+        id,
+        creatorId: user.id,
+      },
+    });
+
+    return {
+      message: "Poll deleted successfully.",
+      success: true,
+    };
+  } catch (error) {
+    return {
+      message: "Failed to delete poll.",
+      success: false,
+    };
+  }
+}
