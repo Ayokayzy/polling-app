@@ -15,10 +15,15 @@ import type { FormState, ActionResult, Poll, PollWithVotes } from "@/types";
 import { getCurrentUser } from "./auth";
 
 /**
- * Create a new poll
- * @param prevState - Previous form state
- * @param formData - Poll form data containing question and options
- * @returns Form state with validation results and messages
+ * Create a new poll from submitted form data.
+ *
+ * Validates `formData` (question and options), requires the current user to be authenticated,
+ * and persists the poll with the authenticated user set as the creator.
+ *
+ * @param prevState - Previous form state (preserved caller-side state; not used for validation)
+ * @param formData - Object containing `question` and `options` for the poll
+ * @returns A Promise resolving to a FormState describing the result:
+ *          `message` (user-facing status), `validate` (true on success), and optional `errors`
  */
 export async function createPoll(
   prevState: any,
@@ -73,11 +78,17 @@ export async function createPoll(
 }
 
 /**
- * Update an existing poll
- * @param id - Poll ID
- * @param prevState - Previous form state
- * @param formData - Form data containing updated poll information
- * @returns Form state with validation results and messages
+ * Validate and apply updates to an existing poll, then revalidate and redirect to the polls page.
+ *
+ * Validates incoming form data against the update schema, ensures the current user is the poll's creator,
+ * and updates the poll in the database. On successful update this action triggers revalidation of the
+ * polls route and redirects to the polls page. If the user is unauthenticated, validation fails, or a
+ * server error occurs, a FormState with an appropriate message and validation flag is returned.
+ *
+ * @param id - The ID of the poll to update.
+ * @param formData - FormData containing updated fields (`question` and repeated `options`).
+ * @returns A FormState describing validation results or an error. On successful update the function redirects
+ *          and does not return a normal FormState result. 
  */
 export async function updatePoll(
   id: string,
@@ -133,9 +144,14 @@ export async function updatePoll(
 }
 
 /**
- * Delete a poll
- * @param id - Poll ID to delete
- * @returns Action result indicating success or failure
+ * Delete a poll owned by the current authenticated user.
+ *
+ * Deletes the poll with the given `id` only if the currently authenticated user is the poll's creator.
+ * On success, triggers revalidation for the polls and dashboard pages and returns a success result.
+ * If no user is authenticated, returns an unauthorized result. On unexpected errors returns a server error result.
+ *
+ * @param id - ID of the poll to delete; deletion will only occur if the current user is the poll's creator
+ * @returns An ActionResult with `success: true` on successful deletion, or `success: false` with an error message otherwise
  */
 export async function deletePoll(id: string): Promise<ActionResult> {
   try {
@@ -230,9 +246,16 @@ export async function getPolls(options?: {
 }
 
 /**
- * Get a single poll by ID with vote counts
- * @param id - Poll ID
- * @returns Poll with votes and vote counts, or null if not found
+ * Retrieve a poll by its ID and return it augmented with per-option vote counts and total votes.
+ *
+ * Fetches the poll (including its votes and the creator's email). If found, computes a
+ * mapping of each option to the number of votes it received (`voteCounts`) and the
+ * total number of votes (`totalVotes`), then returns the original poll fields plus
+ * those additions.
+ *
+ * @param id - The poll's unique identifier.
+ * @returns The poll object augmented with `voteCounts: Record<string, number>` and
+ *          `totalVotes: number`, or `null` if the poll does not exist or an error occurs.
  */
 export async function getPollWithVotes(id: string): Promise<PollWithVotes | null> {
   try {
@@ -307,9 +330,17 @@ export async function getUserPolls(options?: {
 }
 
 /**
- * Get poll statistics
- * @param id - Poll ID
- * @returns Poll statistics including vote distribution
+ * Compute statistics for a poll.
+ *
+ * Retrieves the poll with its votes and returns aggregated statistics per option.
+ *
+ * @param id - The poll's unique identifier.
+ * @returns An object containing:
+ *  - poll: { id, question, creator, createdAt }
+ *  - totalVotes: total number of votes
+ *  - options: array of { option, votes, percentage } for each poll option
+ *  - mostVotedOption: the option entry with the highest vote count
+ *  or `null` if the poll does not exist or an error occurs.
  */
 export async function getPollStats(id: string) {
   try {
@@ -350,10 +381,11 @@ export async function getPollStats(id: string) {
 }
 
 /**
- * Check if a poll exists and user has access to it
- * @param id - Poll ID
- * @param userId - Optional user ID for ownership check
- * @returns Boolean indicating if poll exists and is accessible
+ * Return true if a poll with the given `id` exists. If `userId` is provided, the poll must also be owned by that user.
+ *
+ * @param id - Poll ID to check
+ * @param userId - Optional user ID to require ownership
+ * @returns `true` when the poll exists (and is owned by `userId` if provided); `false` when not found or on error
  */
 export async function canAccessPoll(id: string, userId?: string): Promise<boolean> {
   try {

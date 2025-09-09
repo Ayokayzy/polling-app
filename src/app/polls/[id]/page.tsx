@@ -7,6 +7,17 @@ import { getPollWithVotes, getUserVote } from "@/lib/actions";
 import { Calendar, User } from "lucide-react";
 import { Metadata } from "next";
 
+/**
+ * Builds page metadata for a poll detail page using the poll ID.
+ *
+ * Fetches poll data (including options and total votes) and returns SEO and social metadata:
+ * - If the poll is missing, returns a fallback title and description indicating "Poll Not Found".
+ * - If the poll exists, returns a title, description, and Open Graph/Twitter card fields populated
+ *   from the poll question, a short list of up to three options, and the current total votes.
+ *
+ * @param params - Route params containing the poll `id`.
+ * @returns A Metadata object suitable for Next.js page metadata (openGraph and twitter included).
+ */
 export async function generateMetadata({
   params,
 }: {
@@ -43,6 +54,17 @@ export async function generateMetadata({
   };
 }
 
+/**
+ * Renders the poll detail page for a given poll id.
+ *
+ * Fetches poll data and the current user's vote, returns a server-rendered UI that shows
+ * the poll question, creator and creation date, voting interface/results, statistics,
+ * additional poll info, and sharing controls. If the poll cannot be found, this function
+ * triggers a 404 via `notFound()`.
+ *
+ * @param params - Route params object.
+ * @param params.id - The poll identifier to load.
+ */
 export default async function PollDetailPage({
   params,
 }: {

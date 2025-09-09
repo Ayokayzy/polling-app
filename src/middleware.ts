@@ -1,6 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse, type NextRequest } from "next/server";
 
+/**
+ * Middleware that enforces authentication and redirects between protected routes and auth pages.
+ *
+ * Detects the current Supabase authenticated user and:
+ * - redirects authenticated users away from "/auth" pages to "/",
+ * - redirects unauthenticated users accessing protected routes to "/login".
+ *
+ * @param request - The incoming Next.js request; used to read the request pathname and build redirect URLs.
+ * @returns A NextResponse: either the unchanged `NextResponse.next()` to continue processing, or a redirect response to `/` or `/login`.
+ */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: {

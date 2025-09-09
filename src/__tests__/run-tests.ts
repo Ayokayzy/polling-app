@@ -144,7 +144,14 @@ Examples:
   }
 }
 
-// Main execution
+/**
+ * Entrypoint invoked when the script is executed directly; parses CLI args and runs the test runner.
+ *
+ * If `--help` or `-h` is present, prints help via `TestRunner.showHelp()` and exits the process with code 0.
+ * Otherwise constructs a `TestRunner` and awaits its `run()` method to execute the configured test flow.
+ *
+ * @returns A promise that resolves when the runner finishes. This function may terminate the process early when help is requested.
+ */
 async function main() {
   const args = process.argv.slice(2);
 
