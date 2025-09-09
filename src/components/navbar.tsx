@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/superbase/server";
+import { createClient } from "@/lib/supabase/server";
 import { UserNav } from "./user-nav";
 
 export async function Navbar() {

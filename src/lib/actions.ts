@@ -1,247 +1,34 @@
-"use server";
+// Legacy actions file - migrate imports to use new modular structure
+// This file is kept for backward compatibility during the migration
 
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/superbase/actions";
-import z from "zod";
-import { prisma } from "./prisma";
-import { pollFormSchema } from "@/components/create-poll-form";
+export {
+  // Authentication actions
+  login,
+  signup,
+  logout,
+  getCurrentUser,
+  isAuthenticated,
+  requireAuth,
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email" }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
-});
+  // Poll management actions
+  createPoll,
+  updatePoll,
+  deletePoll,
+  getPolls,
+  getPollWithVotes,
+  getUserPolls,
+  getPollStats,
+  canAccessPoll,
 
-const signupSchema = z.object({
-  email: z.string().email("Invalid email"),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
-});
+  // Voting actions
+  submitVote,
+  hasUserVoted,
+  getUserVote,
+  getPollVotes,
+  getUserVotingHistory,
+  removeVote,
+  getVoteStatistics,
+} from "./actions/index";
 
-export async function login(prevState: any, formData: FormData) {
-  // Parse + validate using Zod
-  const parsed = loginSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-  });
-
-  if (!parsed.success) {
-    console.log({ error: parsed.error });
-    const fieldErrors: Record<string, string> = {};
-    const error = parsed.error;
-    parsed.error.issues.forEach((err) => {
-      if (err.path[0]) {
-        fieldErrors[err.path[0] as string] = err.message;
-      }
-    });
-
-    return {
-      errors: fieldErrors,
-      message: "Validation failed",
-      validate: false,
-    };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
-
-  if (error) {
-    return {
-      errors: {},
-      message: error.message,
-      validate: false,
-    };
-  }
-
-  redirect("/polls");
-}
-
-export async function signup(prevState: any, formData: FormData) {
-  const supabase = await createClient();
-
-  const raw = {
-    email: formData.get("email"),
-    password: formData.get("password"),
-  };
-
-  const parsed = signupSchema.safeParse(raw);
-  if (!parsed.success) {
-    const errors = parsed.error.flatten().fieldErrors;
-    return {
-      message: "Please fix the errors below",
-      validate: false,
-      errors: {
-        email: errors.email?.[0] || "",
-        password: errors.password?.[0] || "",
-      },
-    };
-  }
-
-  const { data: signupData, error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password,
-  });
-
-  if (error) {
-    return {
-      message: error.message,
-      validate: false,
-      errors: {},
-    };
-  }
-
-  // Optionally sync with Prisma
-  if (signupData.user) {
-    try {
-      await prisma.user.create({
-        data: {
-          id: signupData.user.id,
-          email: signupData.user.email,
-        },
-      });
-      return {
-        message: "check mail to confirm your account",
-        validate: true,
-        errors: {},
-      };
-    } catch (error) {
-      console.error(error);
-      return {
-        message: "Failed to create user",
-        validate: false,
-        errors: {},
-      };
-    }
-  }
-
-  redirect("/login");
-}
-
-export async function createPoll(
-  prevState: any,
-  formData: z.infer<typeof pollFormSchema>,
-) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      message: "You must be logged in to create a poll.",
-      validate: false,
-    };
-  }
-
-  const schema = z.object({
-    question: z.string().min(1),
-    options: z.array(z.string()).min(2),
-  });
-
-  const data = schema.parse({
-    question: formData.question,
-    options: formData.options,
-  });
-  console.log({ data });
-
-  try {
-    await prisma.poll.create({
-      data: {
-        ...data,
-        creatorId: user.id,
-      },
-    });
-    return {
-      message: "Poll created successfully",
-      validate: true,
-      errors: {},
-    };
-  } catch (error) {
-    console.log({ error });
-    return {
-      message: "Failed to create poll.",
-      validate: false,
-    };
-  }
-}
-
-export async function updatePoll(
-  id: string,
-  prevState: any,
-  formData: FormData,
-) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      message: "You must be logged in to update a poll.",
-      validate: false,
-    };
-  }
-
-  const schema = z.object({
-    question: z.string().min(1),
-    options: z.array(z.string()).min(2),
-  });
-
-  const data = schema.parse({
-    question: formData.get("question"),
-    options: Array.from(formData.getAll("options")),
-  });
-
-  try {
-    await prisma.poll.update({
-      where: {
-        id,
-        creatorId: user.id,
-      },
-      data: {
-        question: data.question,
-        options: data.options,
-      },
-    });
-
-    redirect("/polls");
-  } catch (error) {
-    return {
-      message: "Failed to update poll.",
-      validate: false,
-    };
-  }
-}
-
-export async function deletePoll(id: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      message: "You must be logged in to delete a poll.",
-      success: false,
-    };
-  }
-
-  try {
-    await prisma.poll.delete({
-      where: {
-        id,
-        creatorId: user.id,
-      },
-    });
-
-    return {
-      message: "Poll deleted successfully.",
-      success: true,
-    };
-  } catch (error) {
-    return {
-      message: "Failed to delete poll.",
-      success: false,
-    };
-  }
-}
+// Re-export everything from the new modular actions structure
+// This ensures backward compatibility while we migrate components

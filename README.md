@@ -1,4 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Polling App
+
+A modern web application that allows users to create, share, and vote on polls with QR code sharing functionality.
+
+## Features
+
+### 🗳️ Poll Management
+- Create polls with multiple options
+- Edit existing polls (creator only)
+- Delete polls (creator only)
+- View detailed poll statistics
+
+### 📊 Voting System
+- One vote per user per poll
+- Real-time vote counting with optimistic updates
+- Visual progress bars showing vote distribution
+- Vote validation and error handling
+
+### 🔗 Poll Sharing
+- Unique shareable URLs for each poll
+- QR code generation for mobile access
+- Native web share API integration
+- Copy-to-clipboard functionality
+
+### 👤 User Authentication
+- Secure user registration and login via Supabase
+- Protected routes and poll ownership
+- User-specific voting tracking
+
+### 🎨 Modern UI/UX
+- Responsive design with Tailwind CSS
+- shadcn/ui components for consistent styling
+- Loading states and skeleton screens
+- Toast notifications for user feedback
+- Optimistic updates for smooth interactions
+
+## Technology Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Database**: Supabase with Prisma ORM
+- **Authentication**: Supabase Auth
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Language**: TypeScript
+- **QR Codes**: qrcode library
 
 ## Getting Started
 
@@ -15,10 +58,6 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More
 
