@@ -1,6 +1,5 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/superbase/actions";
+import { createClient } from "@/lib/supabase/actions";
 import { prisma } from "@/lib/prisma";
 import z from "zod";
 

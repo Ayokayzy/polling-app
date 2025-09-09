@@ -17,7 +17,7 @@ jest.mock("next/cache", () => ({
 }));
 
 // Mock Supabase client
-jest.mock("@/lib/superbase/actions", () => ({
+jest.mock("@/lib/supabase/actions", () => ({
   createClient: jest.fn(() => ({
     auth: {
       signInWithPassword: jest.fn(),
