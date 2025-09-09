@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/superbase/actions";
 import z from "zod";
 import { prisma } from "./prisma";
@@ -91,7 +92,7 @@ export async function signup(prevState: any, formData: FormData) {
   }
 
   // Optionally sync with Prisma
-  if (signupData.user) {
+  if (signupData.user && signupData.user.email) {
     try {
       await prisma.user.create({
         data: {
@@ -243,5 +244,178 @@ export async function deletePoll(id: string) {
       message: "Failed to delete poll.",
       success: false,
     };
+  }
+}
+
+export async function getPollWithVotes(id: string) {
+  try {
+    const poll = await prisma.poll.findUnique({
+      where: { id },
+      include: {
+        votes: true,
+        creator: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!poll) {
+      return null;
+    }
+
+    // Calculate vote counts for each option
+    const options = poll.options as string[];
+    const voteCounts = options.reduce(
+      (acc: Record<string, number>, option: string) => {
+        acc[option] = 0;
+        return acc;
+      },
+      {},
+    );
+
+    poll.votes.forEach((vote) => {
+      if (voteCounts.hasOwnProperty(vote.selectedOption)) {
+        voteCounts[vote.selectedOption]++;
+      }
+    });
+
+    return {
+      ...poll,
+      voteCounts,
+      totalVotes: poll.votes.length,
+    };
+  } catch (error) {
+    console.error("Error fetching poll:", error);
+    return null;
+  }
+}
+
+export async function submitVote(pollId: string, selectedOption: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      message: "You must be logged in to vote.",
+      success: false,
+    };
+  }
+
+  try {
+    // First verify the poll exists and the option is valid
+    const poll = await prisma.poll.findUnique({
+      where: { id: pollId },
+      select: { options: true },
+    });
+
+    if (!poll) {
+      return {
+        message: "Poll not found.",
+        success: false,
+      };
+    }
+
+    const options = poll.options as string[];
+    if (!options.includes(selectedOption)) {
+      return {
+        message: "Invalid voting option.",
+        success: false,
+      };
+    }
+
+    // Check if user has already voted on this poll
+    const existingVote = await prisma.vote.findFirst({
+      where: {
+        pollId,
+        userId: user.id,
+      },
+    });
+
+    if (existingVote) {
+      return {
+        message: "You have already voted on this poll.",
+        success: false,
+      };
+    }
+
+    // Create the vote
+    await prisma.vote.create({
+      data: {
+        pollId,
+        userId: user.id,
+        selectedOption,
+      },
+    });
+
+    // Revalidate the poll page to show updated results
+    revalidatePath(`/polls/${pollId}`);
+
+    return {
+      message: "Vote submitted successfully!",
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error submitting vote:", error);
+    return {
+      message: "Failed to submit vote. Please try again.",
+      success: false,
+    };
+  }
+}
+
+export async function hasUserVoted(pollId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return false;
+  }
+
+  try {
+    const vote = await prisma.vote.findFirst({
+      where: {
+        pollId,
+        userId: user.id,
+      },
+    });
+
+    return !!vote;
+  } catch (error) {
+    console.error("Error checking user vote:", error);
+    return false;
+  }
+}
+
+export async function getUserVote(pollId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return null;
+  }
+
+  try {
+    const vote = await prisma.vote.findFirst({
+      where: {
+        pollId,
+        userId: user.id,
+      },
+      select: {
+        selectedOption: true,
+      },
+    });
+
+    return vote?.selectedOption || null;
+  } catch (error) {
+    console.error("Error getting user vote:", error);
+    return null;
   }
 }
