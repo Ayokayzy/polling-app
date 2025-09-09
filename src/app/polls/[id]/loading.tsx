@@ -12,6 +12,16 @@ const Skeleton = ({
   />
 );
 
+/**
+ * Client-side skeleton loader for the poll detail page.
+ *
+ * Renders a multi-section loading skeleton that mirrors the poll UI while data is being fetched:
+ * poll header, voting options (with four placeholder items), statistics grid, additional info rows,
+ * and a share section with action buttons and a large media placeholder. Uses the inline `Skeleton`
+ * blocks and Card/ CardHeader/ CardContent wrappers to provide consistent spacing and pulse animation.
+ *
+ * @returns The React element tree representing the loading skeleton.
+ */
 export default function Loading() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">

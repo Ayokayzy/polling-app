@@ -8,10 +8,15 @@ import { MESSAGES, ROUTES } from "@/constants";
 import type { FormState } from "@/types";
 
 /**
- * Login action for user authentication
- * @param prevState - Previous form state
- * @param formData - Form data containing email and password
- * @returns Form state with validation results and messages
+ * Authenticate a user with an email and password and redirect to the polls page on success.
+ *
+ * Validates `formData` against the login schema; on validation or authentication failure
+ * returns a FormState containing per-field errors (when available) and a user-facing message.
+ * On successful sign-in this action redirects to ROUTES.POLLS and does not return a FormState.
+ *
+ * @param prevState - Previous form state (preserved by callers; not modified by this action)
+ * @param formData - FormData expected to contain `email` and `password`
+ * @returns A FormState with validation errors and a message when validation or sign-in fails.
  */
 export async function login(prevState: any, formData: FormData): Promise<FormState> {
   const rawData = {
@@ -54,10 +59,13 @@ export async function login(prevState: any, formData: FormData): Promise<FormSta
 }
 
 /**
- * Signup action for user registration
- * @param prevState - Previous form state
- * @param formData - Form data containing email and password
- * @returns Form state with validation results and messages
+ * Handle user signup: validate form data, create a Supabase account, sync the new user to Prisma, and return a FormState describing the result.
+ *
+ * Validates `email` and `password` from `formData`. On validation failure returns per-field errors and a message. On Supabase sign-up failure returns the provider error message. If sign-up succeeds and a user record with an email is returned, the function attempts to create a corresponding Prisma user record and returns a success FormState; if the Prisma sync fails it returns a failure message. If sign-up does not yield a user record the function redirects to the login route.
+ *
+ * @param prevState - Previous form state (passed through by the caller; not used by this action)
+ * @param formData - FormData containing `email` and `password`
+ * @returns A FormState object with `message`, `validate` (boolean), and `errors` (per-field error strings)
  */
 export async function signup(prevState: any, formData: FormData): Promise<FormState> {
   const rawData = {
@@ -129,8 +137,10 @@ export async function signup(prevState: any, formData: FormData): Promise<FormSt
 }
 
 /**
- * Logout action for user sign out
- * Redirects to home page after successful logout
+ * Signs out the current user via Supabase and redirects to the home route.
+ *
+ * If sign-out fails, the error is logged and the function still redirects to the home route
+ * to ensure client-side session state is cleared.
  */
 export async function logout(): Promise<void> {
   try {
@@ -145,8 +155,11 @@ export async function logout(): Promise<void> {
 }
 
 /**
- * Get current authenticated user
- * @returns User data or null if not authenticated
+ * Retrieve the currently authenticated Supabase user.
+ *
+ * Returns the authenticated user object if a session exists; returns `null` if no user is authenticated or if an error occurs while fetching the user. This function does not throw; errors are logged and result in `null`.
+ *
+ * @returns The Supabase `User` object when authenticated, otherwise `null`.
  */
 export async function getCurrentUser() {
   try {
@@ -166,8 +179,11 @@ export async function getCurrentUser() {
 }
 
 /**
- * Check if user is authenticated
- * @returns Boolean indicating authentication status
+ * Returns whether a user is currently authenticated.
+ *
+ * Resolves to `true` if a current user session exists, otherwise `false`. If an error occurs while checking the session, the function returns `false`.
+ *
+ * @returns `true` when a signed-in user is found; `false` otherwise.
  */
 export async function isAuthenticated(): Promise<boolean> {
   try {
@@ -180,8 +196,11 @@ export async function isAuthenticated(): Promise<boolean> {
 }
 
 /**
- * Require authentication - redirects to login if not authenticated
- * @param redirectTo - Optional redirect path after login
+ * Ensure the current request is authenticated; if not, redirect to the login page.
+ *
+ * If `redirectTo` is provided, it will be URL-encoded and appended as `?redirect=` so the user can be returned after signing in.
+ *
+ * @param redirectTo - Optional path or URL to return the user to after successful login
  */
 export async function requireAuth(redirectTo?: string): Promise<void> {
   const authenticated = await isAuthenticated();

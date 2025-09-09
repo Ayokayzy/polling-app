@@ -13,6 +13,17 @@ interface PollShareProps {
   pollQuestion: string;
 }
 
+/**
+ * Renders a share UI for a poll including QR code generation, copy-to-clipboard, and Web Share integration.
+ *
+ * Displays the poll URL (selectable and copyable), generates and shows a QR code for the poll URL
+ * (with a loading state while generating), and provides actions to share via the Web Share API or
+ * fall back to copying the URL. The component constructs the poll URL from `window.location.origin`
+ * and regenerates the QR code whenever `pollId` changes.
+ *
+ * @param pollId - Poll identifier used to build the shareable URL (e.g., appended to `/polls/`)
+ * @param pollQuestion - Poll question text included in the Web Share message
+ */
 export function PollShare({ pollId, pollQuestion }: PollShareProps) {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);

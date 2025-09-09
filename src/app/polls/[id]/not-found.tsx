@@ -3,6 +3,15 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
+/**
+ * Renders a centered "Poll Not Found" page with guidance and navigation actions.
+ *
+ * Displays an alert icon, a brief message saying the poll does not exist or may have been deleted,
+ * and two call-to-action buttons: "Back to Polls" (navigates to `/polls`) and "Create New Poll"
+ * (navigates to `/polls/new`). This is a static, presentational component with responsive layout.
+ *
+ * @returns The NotFound page JSX element.
+ */
 export default function NotFound() {
   return (
     <div className="container mx-auto p-6 max-w-2xl">

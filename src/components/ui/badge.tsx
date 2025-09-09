@@ -25,6 +25,18 @@ const badgeVariants = cva(
   }
 )
 
+/**
+ * Badge UI component that renders a styled label with selectable visual variants.
+ *
+ * Renders a span by default or a Radix Slot when `asChild` is true, applying variant-driven
+ * classes from `badgeVariants` merged with any provided `className`. All other span props
+ * (aria attributes, event handlers, etc.) are forwarded to the rendered element.
+ *
+ * @param className - Additional classes to merge with the generated variant classes.
+ * @param variant - Visual variant to apply (e.g., "default", "secondary", "destructive", "outline").
+ * @param asChild - If true, renders a `Slot` so a parent-provided element receives the badge behavior.
+ * @returns A JSX element (span or Slot) with `data-slot="badge"` and merged class names.
+ */
 function Badge({
   className,
   variant,

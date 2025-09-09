@@ -12,10 +12,12 @@ import type { ActionResult, Vote } from "@/types";
 import { getCurrentUser } from "./auth";
 
 /**
- * Submit a vote for a poll
- * @param pollId - ID of the poll to vote on
- * @param selectedOption - The option the user selected
- * @returns Action result indicating success or failure
+ * Submits the current authenticated user's vote for a poll.
+ *
+ * Validates input and poll/option existence, prevents double-voting, creates a vote record,
+ * and triggers revalidation of the poll detail page. Requires an authenticated user.
+ *
+ * @returns An ActionResult indicating success or failure; on success `success: true` with a success message, otherwise `success: false` with an error message and (when validation fails) validation errors.
  */
 export async function submitVote(
   pollId: string,
@@ -108,9 +110,12 @@ export async function submitVote(
 }
 
 /**
- * Check if user has voted on a specific poll
+ * Determine whether the current authenticated user has already voted on a poll.
+ *
+ * Returns true if a vote by the current user exists for the given poll; returns false if the user is unauthenticated, no vote is found, or an error occurs.
+ *
  * @param pollId - ID of the poll to check
- * @returns Boolean indicating if user has voted
+ * @returns True when the current user has a vote for `pollId`, otherwise false
  */
 export async function hasUserVoted(pollId: string): Promise<boolean> {
   try {
@@ -135,9 +140,12 @@ export async function hasUserVoted(pollId: string): Promise<boolean> {
 }
 
 /**
- * Get user's vote for a specific poll
- * @param pollId - ID of the poll
- * @returns User's selected option or null if not voted
+ * Retrieve the current user's selected option for a given poll.
+ *
+ * Returns the selected option string, or `null` if the user is not authenticated,
+ * has not voted on the poll, or an error occurs while fetching the vote.
+ *
+ * @returns The user's `selectedOption` for the poll, or `null`.
  */
 export async function getUserVote(pollId: string): Promise<string | null> {
   try {
@@ -165,9 +173,14 @@ export async function getUserVote(pollId: string): Promise<string | null> {
 }
 
 /**
- * Get all votes for a specific poll
- * @param pollId - ID of the poll
- * @returns Array of votes
+ * Retrieve all votes for a given poll, including each voter's email.
+ *
+ * Returns vote records for the specified `pollId`, with the related user's
+ * email selected and results ordered by `createdAt` descending. On error an
+ * empty array is returned.
+ *
+ * @param pollId - The ID of the poll to fetch votes for.
+ * @returns An array of Vote records (each includes `user.email`).
  */
 export async function getPollVotes(pollId: string): Promise<Vote[]> {
   try {
@@ -195,9 +208,12 @@ export async function getPollVotes(pollId: string): Promise<Vote[]> {
 }
 
 /**
- * Get user's voting history
- * @param options - Query options for pagination
- * @returns Array of user's votes
+ * Retrieve the current user's voting history with optional pagination.
+ *
+ * Returns the authenticated user's votes ordered by newest first, including basic poll info (poll id, question, and creator email).
+ *
+ * @param options - Pagination options. `page` is 1-based (default 1). `limit` is items per page (default 10).
+ * @returns An array of Vote records for the current user; returns an empty array if unauthenticated or on error.
  */
 export async function getUserVotingHistory(options?: {
   page?: number;
@@ -245,9 +261,14 @@ export async function getUserVotingHistory(options?: {
 }
 
 /**
- * Remove user's vote from a poll (if allowed)
- * @param pollId - ID of the poll
- * @returns Action result indicating success or failure
+ * Removes the current user's vote for the specified poll.
+ *
+ * If the user is not authenticated, returns an unauthorized result. If the user has not voted
+ * on the poll, returns a failure result indicating no vote was found. On success the vote is
+ * deleted and the poll detail page is revalidated.
+ *
+ * @returns An ActionResult: `{ success: true, message: "Vote removed successfully" }` on success,
+ * otherwise `{ success: false, message: string }` describing the failure.
  */
 export async function removeVote(pollId: string): Promise<ActionResult> {
   try {
@@ -299,9 +320,18 @@ export async function removeVote(pollId: string): Promise<ActionResult> {
 }
 
 /**
- * Get vote statistics for multiple polls
- * @param pollIds - Array of poll IDs
- * @returns Vote statistics for each poll
+ * Computes vote statistics for each provided poll ID.
+ *
+ * For each poll returns total votes, number of unique voters, and a per-option tally.
+ * If a poll ID does not exist the statistics for that poll use zeros and an empty `votesPerOption` object.
+ *
+ * @param pollIds - Array of poll IDs to compute statistics for.
+ * @returns An array of statistics objects in the same order as `pollIds`. Each object contains:
+ * - `pollId`: the poll id
+ * - `totalVotes`: total number of vote records for the poll
+ * - `uniqueVoters`: count of distinct userIds that voted
+ * - `votesPerOption`: mapping of each poll option to its vote count
+ * On unexpected errors this function returns an empty array.
  */
 export async function getVoteStatistics(pollIds: string[]): Promise<
   Array<{

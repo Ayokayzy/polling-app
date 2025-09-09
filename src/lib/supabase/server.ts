@@ -2,7 +2,15 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 // This client is for Server Components, Server Actions, and Route Handlers.
-// It reads the user's session from the request cookies.
+/**
+ * Create a Supabase server client that reads and manages session cookies from the Next.js request.
+ *
+ * The returned client is configured to use the current request's cookies:
+ * - `getAll()` returns all cookies from the request.
+ * - `setAll()` attempts to set multiple cookies; setting will succeed in Server Actions or Route Handlers but may fail silently in Server Components.
+ *
+ * @returns A Supabase server client instance configured for server-side use with cookie handling.
+ */
 export async function createClient() {
   const cookieStore = await cookies();
 

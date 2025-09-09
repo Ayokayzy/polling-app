@@ -3,6 +3,21 @@ import { createClient } from "@/lib/supabase/actions";
 import { prisma } from "@/lib/prisma";
 import z from "zod";
 
+/**
+ * Retrieve the authenticated user's vote for a poll.
+ *
+ * If the URL contains the query parameter `check`, returns `{ hasVoted: boolean }`
+ * indicating whether the user has a vote for the poll. Otherwise returns
+ * `{ selectedOption: string | null }` where `selectedOption` is the stored choice
+ * or `null` if the user hasn't voted.
+ *
+ * Responses:
+ * - 200: Successful retrieval with one of the JSON shapes described above.
+ * - 401: When no authenticated user is found.
+ * - 500: On internal errors while accessing the database.
+ *
+ * @param params.id - Poll identifier extracted from the route (used to look up the vote).
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } },
@@ -41,6 +56,22 @@ export async function GET(
   }
 }
 
+/**
+ * Submit a vote for a poll on behalf of the authenticated user.
+ *
+ * Validates the request body for a `selectedOption`, ensures the poll exists,
+ * verifies the option is one of the poll's choices, prevents duplicate votes
+ * by the same user, and creates a new vote record.
+ *
+ * @param params.id - The ID of the poll to vote on
+ * @returns A NextResponse with appropriate status codes:
+ *  - 201 when the vote is created
+ *  - 400 for validation errors or invalid option
+ *  - 401 if the user is not authenticated
+ *  - 404 if the poll does not exist
+ *  - 409 if the user has already voted on the poll
+ *  - 500 on unexpected server errors
+ */
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } },

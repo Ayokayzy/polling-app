@@ -17,6 +17,28 @@ interface PollVotingProps {
   userVote?: string;
 }
 
+/**
+ * Renders a poll voting UI with optimistic updates, error handling, and results display.
+ *
+ * Displays selectable options (if any), allows the user to cast a vote with an optimistic
+ * increment to local counts, then submits the vote via the `submitVote` API in a React
+ * transition. On API failure or error the optimistic update is reverted and an error banner
+ * is shown. The component always shows a results section with per-option percentages and a
+ * refresh action that calls `router.refresh()`.
+ *
+ * Side effects:
+ * - Calls `submitVote(pollId, option)` when a vote is submitted.
+ * - Uses `router.refresh()` when refreshing results.
+ * - Emits success/error toasts for submit and refresh outcomes.
+ *
+ * @param pollId - Unique identifier for the poll.
+ * @param options - List of option labels to render.
+ * @param voteCounts - Initial vote counts keyed by option label; used as the baseline for optimistic updates.
+ * @param totalVotes - Initial total vote count; used as the baseline for optimistic updates.
+ * @param initialHasVoted - Whether the current user has already voted (initial state).
+ * @param initialUserVote - The option the current user initially voted for, if any.
+ * @returns A React element rendering the voting UI and results.
+ */
 export function PollVoting({
   pollId,
   options,
